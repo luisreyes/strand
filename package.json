@@ -1,0 +1,10 @@
+{
+  "name": "strand",
+  "private": true,
+  "type": "module",
+  "description": "A colored thread of your working time. On-device time tracker PWA.",
+  "scripts": {
+    "start": "python3 -m http.server 4173",
+    "test": "node --test"
+  }
+}

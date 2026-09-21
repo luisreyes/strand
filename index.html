@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#100e0c">
+  <meta name="description" content="Strand is a private, on-device time tracker. Your day becomes a colored timeline.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Strand">
+  <meta property="og:title" content="Strand">
+  <meta property="og:description" content="A colored thread of your working time.">
+  <title>Strand</title>
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <div class="brand">
+        <span class="mark" aria-hidden="true"></span>
+        <h1>Strand</h1>
+      </div>
+      <div class="top-actions">
+        <button id="float-btn" class="top-btn" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"></rect>
+            <rect x="11" y="11" width="8" height="6" rx="1.2" fill="currentColor"></rect>
+          </svg>
+          Float
+        </button>
+        <button id="menu-btn" class="top-btn" type="button" aria-expanded="false" aria-controls="menu">More</button>
+        <div id="menu" class="menu" role="menu" hidden>
+          <button type="button" role="menuitem" data-action="copy">Copy to clipboard</button>
+          <button type="button" role="menuitem" data-action="sheets">Export to Google Sheets</button>
+          <button type="button" role="menuitem" data-action="csv">Download CSV</button>
+          <button type="button" role="menuitem" data-action="backup">Export backup</button>
+          <button type="button" role="menuitem" data-action="import">Import backup</button>
+          <button type="button" role="menuitem" data-action="install" id="install-btn" hidden>Install app</button>
+          <p id="ios-hint" class="menu-note" hidden>To install on iPhone, tap Share, then Add to Home Screen.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <div class="work">
+        <section class="hero" id="hero" aria-labelledby="active-name">
+          <p class="clock" id="clock">0:00:00</p>
+          <div class="active-row">
+            <span class="live-dot" id="live-dot" hidden></span>
+            <p class="active-name" id="active-name">Nothing running</p>
+          </div>
+          <p class="today-line" id="today-line">Add a task, then tap it to start</p>
+          <button id="run-btn" class="run-btn" type="button" hidden>Pause</button>
+        </section>
+
+        <section class="timeline-section" aria-labelledby="timeline-label">
+          <h2 id="timeline-label" class="sr-only">Timeline</h2>
+          <div class="day-nav">
+            <button id="day-prev" class="day-btn" type="button" aria-label="Previous day">‹</button>
+            <button id="day-label" class="day-label" type="button">Today</button>
+            <button id="day-next" class="day-btn" type="button" aria-label="Next day">›</button>
+          </div>
+          <div class="track-scroll" id="track-scroll">
+            <div id="track" class="track" role="list"></div>
+            <p id="track-empty" class="track-empty">Colors collect here as you work.</p>
+          </div>
+          <p id="viewed-total" class="viewed-total" hidden></p>
+        </section>
+      </div>
+
+      <div class="side">
+        <form id="composer" class="composer">
+          <label class="sr-only" for="title-input">Task title</label>
+          <input id="title-input" type="text" maxlength="120" placeholder="What are you working on?" autocomplete="off" enterkeyhint="done" spellcheck="false">
+          <div id="swatches" class="swatches" role="listbox" aria-label="Task color">
+            <input id="custom-color" type="color" aria-label="Custom color" value="#ff6b4a">
+          </div>
+          <button class="add-btn" type="submit" aria-label="Add task">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            </svg>
+          </button>
+          </form>
+
+        <div class="list-head">
+          <h2>Tasks</h2>
+          <span id="task-count" class="today-line"></span>
+        </div>
+        <ul id="task-list" class="task-list"></ul>
+        <p id="task-empty" class="empty">No tasks yet. Add one above, then select it to start tracking.</p>
+      </div>
+    </div>
+
+    <p class="fineprint">Times stay on this device until you export them.</p>
+  </div>
+
+  <div id="float-root" class="float-root">
+    <p class="float-clock" data-clock>0:00:00</p>
+    <div class="float-name-row">
+      <span class="live-dot" data-dot hidden></span>
+      <p class="float-name" data-name>Paused</p>
+    </div>
+    <div class="track-scroll">
+      <div class="track" data-track role="list" aria-label="Today timeline"></div>
+    </div>
+    <div class="float-dots" data-dots aria-label="Switch task"></div>
+    <button type="button" class="float-toggle" data-toggle hidden>Pause</button>
+    <div class="tooltip" data-tip hidden role="tooltip">
+      <p class="tip-title"><span class="tip-swatch"></span><span class="tip-title-text"></span></p>
+      <p class="tip-length"></p>
+      <p class="tip-total" hidden></p>
+    </div>
+  </div>
+
+  <div id="tooltip" class="tooltip" hidden role="tooltip">
+    <p class="tip-title"><span class="tip-swatch"></span><span class="tip-title-text"></span></p>
+    <p class="tip-length"></p>
+    <p class="tip-total" hidden></p>
+  </div>
+
+  <dialog id="editor" class="editor">
+    <form id="editor-form">
+      <h3>Edit task</h3>
+      <label>Title
+        <input id="edit-title" type="text" maxlength="120" required autocomplete="off">
+      </label>
+      <label>Description
+        <textarea id="edit-desc" maxlength="2000" placeholder="Notes about this work"></textarea>
+      </label>
+      <div id="edit-swatches" class="swatches" aria-label="Task color"></div>
+      <fieldset class="time-fields">
+        <legend class="sr-only">Tracked time</legend>
+        <label>Hours <input id="edit-h" type="number" min="0" inputmode="numeric" autocomplete="off"></label>
+        <label>Minutes <input id="edit-m" type="number" min="0" inputmode="numeric" autocomplete="off"></label>
+        <label>Seconds <input id="edit-s" type="number" min="0" inputmode="numeric" autocomplete="off"></label>
+      </fieldset>
+      <p class="hint">Changing the time redraws the timeline. Added time lands on the latest block of this task.</p>
+      <div class="dialog-actions">
+        <button id="edit-delete" class="danger" type="button">Delete</button>
+        <button id="edit-cancel" class="btn-ghost" type="button">Cancel</button>
+        <button class="btn-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm">
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p id="confirm-message" class="confirm-copy"></p>
+    <div class="dialog-actions">
+      <button id="confirm-cancel" class="btn-ghost" type="button">Cancel</button>
+      <button id="confirm-ok" class="btn-primary" type="button">Confirm</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <input id="import-file" type="file" accept="application/json,.json" hidden>
+
+  <template id="pencil-template">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <path d="M4 20h4L18.5 9.5a2 2 0 0 0 0-2.8l-.2-.2a2 2 0 0 0-2.8 0L5 16.9V20z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"></path>
+    </svg>
+  </template>
+
+  <noscript>
+    <p class="fineprint">Strand needs JavaScript to track your time.</p>
+  </noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

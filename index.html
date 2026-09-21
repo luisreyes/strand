@@ -132,6 +132,13 @@
     </div>
     <div class="float-dots" data-dots aria-label="Switch task"></div>
     <button type="button" class="float-toggle" data-toggle hidden>Pause</button>
+    <div class="float-confirm" data-confirm hidden>
+      <p data-confirm-copy></p>
+      <div class="confirm-actions">
+        <button type="button" class="btn-ghost" data-confirm-cancel>Cancel</button>
+        <button type="button" class="btn-primary" data-confirm-ok>Start</button>
+      </div>
+    </div>
     <div class="tooltip" data-tip hidden role="tooltip">
       <p class="tip-title"><span class="tip-swatch"></span><span class="tip-title-text"></span></p>
       <p class="tip-length"></p>
@@ -178,6 +185,14 @@
       <button id="confirm-ok" class="btn-primary" type="button">Confirm</button>
     </div>
   </dialog>
+
+  <div id="action-confirm" class="action-confirm" hidden role="dialog" aria-modal="false" aria-labelledby="action-confirm-copy">
+    <p id="action-confirm-copy" data-confirm-copy></p>
+    <div class="confirm-actions">
+      <button type="button" class="btn-ghost" id="action-confirm-cancel" data-confirm-cancel>Cancel</button>
+      <button type="button" class="btn-primary" id="action-confirm-ok" data-confirm-ok>Start</button>
+    </div>
+  </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <input id="import-file" type="file" accept="application/json,.json" hidden>

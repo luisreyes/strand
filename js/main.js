@@ -79,6 +79,7 @@ const confirmMessage = $("confirm-message");
 const confirmOk = $("confirm-ok");
 const confirmCancel = $("confirm-cancel");
 const toastEl = $("toast");
+const actionConfirm = $("action-confirm");
 const importFile = $("import-file");
 const floatRoot = $("float-root");
 const pencilTemplate = $("pencil-template");
@@ -87,6 +88,7 @@ let state = loadState();
 let selectedColor = PALETTE[0];
 let pinnedDay = null;
 let justAddedId = null;
+let pending = null;
 let editorState = null;
 let toastTimer = 0;
 let deferredPrompt = null;
@@ -135,6 +137,7 @@ function applyRemote(next) {
   if (editor.open && editorState && !state.tasks.some((task) => task.id === editorState.id)) {
     editor.close();
   }
+  closeConfirm();
   render();
 }
 
@@ -474,9 +477,108 @@ function paintDots(container, tasks, activeId) {
     button.className = "dot";
     button.dataset.task = task.id;
     button.style.background = task.color;
-    button.setAttribute("aria-label", `Track ${task.title}`);
+    button.setAttribute("aria-label", task.id === activeId ? `Stop ${task.title}` : `Start ${task.title}`);
     button.setAttribute("aria-pressed", String(task.id === activeId));
     container.appendChild(button);
+  }
+}
+
+function createTaskRow(task) {
+  const item = document.createElement("li");
+  item.className = "task";
+  item.dataset.id = task.id;
+  const main = document.createElement("button");
+  main.type = "button";
+  main.className = "task-main";
+  const title = document.createElement("span");
+  title.className = "task-title";
+  const titleText = document.createElement("span");
+  titleText.className = "task-title-text";
+  title.appendChild(titleText);
+  main.appendChild(title);
+  main.addEventListener("click", () => {
+    const id = item.dataset.id;
+    if (activeTask(state)?.id === id) requestStop();
+    else requestStart(id);
+  });
+
+  const side = document.createElement("div");
+  side.className = "task-side";
+  const time = document.createElement("span");
+  time.className = "task-time";
+  time.dataset.time = task.id;
+  const edit = document.createElement("button");
+  edit.type = "button";
+  edit.className = "icon-btn";
+  edit.append(pencilTemplate.content.cloneNode(true));
+  edit.addEventListener("click", () => {
+    closeConfirm();
+    openEditor(item.dataset.id);
+  });
+  side.append(time, edit);
+  item.append(main, side);
+  return item;
+}
+
+function updateTaskRow(item, task, active, now) {
+  item.style.setProperty("--c", task.color);
+  item.classList.toggle("active", active?.id === task.id);
+  item.classList.toggle("is-pending", pending?.taskId === task.id);
+  item.querySelector(".task-title-text").textContent = task.title;
+  const title = item.querySelector(".task-title");
+  let badge = title.querySelector(".now");
+  if (active?.id === task.id) {
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "now";
+      badge.textContent = "Now";
+      title.appendChild(badge);
+    }
+  } else if (badge) {
+    badge.remove();
+  }
+  const main = item.querySelector(".task-main");
+  let description = main.querySelector(".task-desc");
+  if (task.description) {
+    if (!description) {
+      description = document.createElement("span");
+      description.className = "task-desc";
+      main.appendChild(description);
+    }
+    description.textContent = task.description;
+  } else if (description) {
+    description.remove();
+  }
+  main.setAttribute("aria-label", active?.id === task.id ? `Stop ${task.title}` : `Start ${task.title}`);
+  const time = item.querySelector("[data-time]");
+  time.dataset.time = task.id;
+  time.textContent = formatClock(taskDuration(state, task.id, now));
+  item.querySelector(".icon-btn").setAttribute("aria-label", `Edit ${task.title}`);
+}
+
+function animateReorder(nodes, before) {
+  const moving = [];
+  for (const node of nodes) {
+    const first = before.get(node.dataset.id);
+    if (!first) continue;
+    const dy = first.top - node.getBoundingClientRect().top;
+    if (Math.abs(dy) < 1) continue;
+    node.style.transition = "none";
+    node.style.transform = `translateY(${dy}px)`;
+    moving.push(node);
+  }
+  if (!moving.length) return;
+  const lead = nodes[0];
+  if (moving.includes(lead)) lead.style.zIndex = "2";
+  void taskList.offsetHeight;
+  for (const node of moving) {
+    node.style.transition = "";
+    node.style.transform = "";
+  }
+  if (moving.includes(lead)) {
+    lead.addEventListener("transitionend", () => {
+      lead.style.zIndex = "";
+    }, { once: true });
   }
 }
 
@@ -485,56 +587,30 @@ function renderTasks(now) {
   const active = activeTask(state);
   taskCount.textContent = tasks.length ? String(tasks.length) : "";
   taskEmpty.hidden = tasks.length > 0;
-  taskList.replaceChildren();
+  const previous = [...taskList.children];
+  const before = new Map(previous.map((el) => [el.dataset.id, el.getBoundingClientRect()]));
+  const existing = new Map(previous.map((el) => [el.dataset.id, el]));
+  const orderChanged = tasks.some((task, index) => previous[index]?.dataset.id !== task.id)
+    || previous.length !== tasks.length;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  for (const el of previous) {
+    if (!tasks.some((task) => task.id === el.dataset.id)) el.remove();
+  }
+
+  const nodes = [];
   for (const task of tasks) {
-    const item = document.createElement("li");
-    item.className = "task";
-    if (active?.id === task.id) item.classList.add("active");
-    if (task.id === justAddedId) item.classList.add("just-added");
-    item.style.setProperty("--c", task.color);
-
-    const main = document.createElement("button");
-    main.type = "button";
-    main.className = "task-main";
-    main.setAttribute("aria-label", `Track ${task.title}`);
-    const title = document.createElement("span");
-    title.className = "task-title";
-    const titleText = document.createElement("span");
-    titleText.className = "task-title-text";
-    titleText.textContent = task.title;
-    title.appendChild(titleText);
-    if (active?.id === task.id) {
-      const badge = document.createElement("span");
-      badge.className = "now";
-      badge.textContent = "Now";
-      title.appendChild(badge);
+    let item = existing.get(task.id);
+    if (!item) {
+      item = createTaskRow(task);
+      if (task.id === justAddedId) item.classList.add("just-added");
     }
-    main.appendChild(title);
-    if (task.description) {
-      const description = document.createElement("span");
-      description.className = "task-desc";
-      description.textContent = task.description;
-      main.appendChild(description);
-    }
-    main.addEventListener("click", () => select(task.id));
-
-    const side = document.createElement("div");
-    side.className = "task-side";
-    const time = document.createElement("span");
-    time.className = "task-time";
-    time.dataset.time = task.id;
-    time.textContent = formatClock(taskDuration(state, task.id, now));
-    const edit = document.createElement("button");
-    edit.type = "button";
-    edit.className = "icon-btn";
-    edit.setAttribute("aria-label", `Edit ${task.title}`);
-    edit.append(pencilTemplate.content.cloneNode(true));
-    edit.addEventListener("click", () => openEditor(task.id));
-    side.append(time, edit);
-    item.append(main, side);
+    updateTaskRow(item, task, active, now);
+    nodes.push(item);
     taskList.appendChild(item);
   }
   justAddedId = null;
+  if (orderChanged && !reduce) animateReorder(nodes, before);
 }
 
 function paintFloat(root, now) {
@@ -619,7 +695,87 @@ function render() {
   paintLive(now);
 }
 
-function select(taskId) {
+function confirmNodes() {
+  const nodes = [];
+  if (!floatMode && actionConfirm) nodes.push(actionConfirm);
+  if (floatMode) {
+    const local = floatRoot.querySelector("[data-confirm]");
+    if (local) nodes.push(local);
+  }
+  const pip = floatSink?.querySelector("[data-confirm]");
+  if (pip) nodes.push(pip);
+  return nodes;
+}
+
+function showConfirm() {
+  if (!pending) return;
+  for (const node of confirmNodes()) {
+    const copy = node.querySelector("[data-confirm-copy]");
+    const ok = node.querySelector("[data-confirm-ok]");
+    if (copy) copy.textContent = pending.copy;
+    if (ok) ok.textContent = pending.ok;
+    node.hidden = false;
+  }
+  document.body.classList.toggle("confirming", !floatMode);
+  for (const row of taskList.querySelectorAll(".task")) {
+    row.classList.toggle("is-pending", row.dataset.id === pending.taskId);
+  }
+}
+
+function closeConfirm() {
+  pending = null;
+  for (const node of confirmNodes()) node.hidden = true;
+  document.body.classList.remove("confirming");
+  for (const row of taskList.querySelectorAll(".is-pending")) row.classList.remove("is-pending");
+}
+
+function openConfirm(action) {
+  pending = action;
+  showConfirm();
+  const owner = document.activeElement?.ownerDocument || document;
+  const local = confirmNodes().find((node) => node.ownerDocument === owner);
+  local?.querySelector("[data-confirm-ok]")?.focus();
+}
+
+function requestStart(taskId) {
+  const task = state.tasks.find((item) => item.id === taskId);
+  if (!task) return;
+  const active = activeTask(state);
+  if (active?.id === taskId) return;
+  if (active) {
+    openConfirm({
+      kind: "switch",
+      taskId,
+      copy: `Stop ${active.title} and start ${task.title}?`,
+      ok: "Switch",
+    });
+    return;
+  }
+  const resumed = state.segments.some((segment) => segment.taskId === taskId);
+  openConfirm({
+    kind: "start",
+    taskId,
+    copy: resumed ? `Resume ${task.title}?` : `Start ${task.title}?`,
+    ok: resumed ? "Resume" : "Start",
+  });
+}
+
+function requestStop() {
+  const active = activeTask(state);
+  if (!active) {
+    const task = lastTask(state);
+    if (task) requestStart(task.id);
+    return;
+  }
+  openConfirm({
+    kind: "stop",
+    taskId: active.id,
+    copy: `Stop ${active.title}?`,
+    ok: "Stop",
+  });
+}
+
+function commitStart(taskId) {
   const now = Date.now();
   const next = selectTask(state, taskId, now);
   if (next === state) return;
@@ -627,8 +783,21 @@ function select(taskId) {
   pinnedDay = null;
   persist();
   render();
-  const task = activeTask(state);
-  if (task) toast(`Tracking ${task.title}`);
+}
+
+function commitStop() {
+  if (!activeTask(state)) return;
+  state = pause(state, Date.now());
+  persist();
+  render();
+}
+
+function commitPending() {
+  const action = pending;
+  if (!action) return;
+  closeConfirm();
+  if (action.kind === "stop") commitStop();
+  else commitStart(action.taskId);
 }
 
 function runLabel() {
@@ -639,20 +808,15 @@ function runLabel() {
 }
 
 function toggleRun() {
-  const now = Date.now();
-  if (activeTask(state)) {
-    state = pause(state, now);
-    persist();
-    render();
-    toast("Paused");
-    return;
+  if (activeTask(state)) requestStop();
+  else {
+    const task = lastTask(state);
+    if (task) requestStart(task.id);
   }
-  const task = lastTask(state);
-  if (!task) return;
-  select(task.id);
 }
 
 function openEditor(taskId) {
+  closeConfirm();
   const task = state.tasks.find((item) => item.id === taskId);
   if (!task) return;
   const parts = splitDuration(taskDuration(state, task.id, Date.now()));
@@ -720,8 +884,11 @@ function setupFloatSurface(root) {
   root.querySelector("[data-dots]")?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-task]");
     if (!button) return;
-    select(button.dataset.task);
+    if (activeTask(state)?.id === button.dataset.task) requestStop();
+    else requestStart(button.dataset.task);
   });
+  root.querySelector("[data-confirm-ok]")?.addEventListener("click", () => commitPending());
+  root.querySelector("[data-confirm-cancel]")?.addEventListener("click", () => closeConfirm());
 }
 
 async function openFloat() {
@@ -757,6 +924,7 @@ async function openFloat() {
       setupFloatSurface(clone);
       floatSink = clone;
       paintFloat(clone, Date.now());
+      if (pending) showConfirm();
       pip.addEventListener("pagehide", () => {
         if (floatSink === clone) floatSink = null;
       });
@@ -824,8 +992,20 @@ document.addEventListener("click", (event) => {
   if (!menu.hidden && !menu.contains(event.target)) closeMenu();
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeMenu();
+  if (event.key !== "Escape") return;
+  if (pending) {
+    closeConfirm();
+    return;
+  }
+  closeMenu();
 });
+document.addEventListener("pointerdown", (event) => {
+  if (!pending) return;
+  if (event.target.closest(".action-confirm, .float-confirm, .task-main, [data-task], #run-btn, [data-toggle]")) return;
+  closeConfirm();
+});
+actionConfirm?.querySelector("[data-confirm-ok]")?.addEventListener("click", () => commitPending());
+actionConfirm?.querySelector("[data-confirm-cancel]")?.addEventListener("click", () => closeConfirm());
 
 menu.addEventListener("click", async (event) => {
   const action = event.target.closest("[data-action]")?.dataset.action;

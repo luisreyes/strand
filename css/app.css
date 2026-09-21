@@ -615,7 +615,58 @@ input[type="color"]::-moz-color-swatch {
 }
 
 .task.is-pending {
+  flex-direction: column;
+  align-items: stretch;
   border-color: var(--ink);
+}
+
+.task-body {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.task-confirm {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding-top: 8px;
+}
+
+.task-confirm p,
+.float-ask p {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.task-confirm .btn-primary,
+.task-confirm .btn-ghost,
+.float-ask .btn-primary,
+.float-ask .btn-ghost {
+  padding: 8px 14px;
+}
+
+.task.is-pending .task-confirm {
+  animation: confirm-reveal 180ms ease;
+}
+
+.float-ask {
+  display: grid;
+  gap: 8px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@keyframes confirm-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
 }
 
 .task.just-added { animation: arrive 900ms ease; }
@@ -808,60 +859,6 @@ dialog::backdrop { background: var(--backdrop); }
 .toast.show {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
-}
-
-.action-confirm {
-  position: fixed;
-  z-index: 45;
-  left: 16px;
-  right: 16px;
-  bottom: calc(16px + env(safe-area-inset-bottom));
-  width: min(420px, calc(100vw - 32px));
-  margin: 0 auto;
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-  background: var(--dialog);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  box-shadow: var(--shadow);
-  animation: action-in 240ms cubic-bezier(.22, .9, .3, 1);
-}
-
-.action-confirm p,
-.float-confirm p {
-  margin: 0;
-  font-weight: 600;
-}
-
-.confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-body.confirming .shell {
-  padding-bottom: calc(128px + env(safe-area-inset-bottom));
-}
-
-body.float-mode .action-confirm { display: none !important; }
-
-.float-confirm {
-  display: grid;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 16px;
-  background: var(--bg-2);
-  border: 1px solid var(--line);
-}
-
-.float-confirm .btn-primary,
-.float-confirm .btn-ghost { padding: 8px 12px; }
-
-@keyframes action-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .float-root {

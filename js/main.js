@@ -79,7 +79,6 @@ const confirmMessage = $("confirm-message");
 const confirmOk = $("confirm-ok");
 const confirmCancel = $("confirm-cancel");
 const toastEl = $("toast");
-const actionConfirm = $("action-confirm");
 const importFile = $("import-file");
 const floatRoot = $("float-root");
 const pencilTemplate = $("pencil-template");
@@ -516,7 +515,31 @@ function createTaskRow(task) {
     openEditor(item.dataset.id);
   });
   side.append(time, edit);
-  item.append(main, side);
+  const body = document.createElement("div");
+  body.className = "task-body";
+  body.append(main, side);
+
+  const confirm = document.createElement("div");
+  confirm.className = "task-confirm";
+  confirm.hidden = true;
+  const copy = document.createElement("p");
+  copy.dataset.confirmCopy = "";
+  const actions = document.createElement("div");
+  actions.className = "confirm-actions";
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "btn-ghost";
+  cancel.textContent = "Cancel";
+  cancel.addEventListener("click", () => closeConfirm());
+  const ok = document.createElement("button");
+  ok.type = "button";
+  ok.className = "btn-primary";
+  ok.dataset.confirmOk = "";
+  ok.addEventListener("click", () => commitPending());
+  actions.append(cancel, ok);
+  confirm.append(copy, actions);
+
+  item.append(body, confirm);
   return item;
 }
 
@@ -554,6 +577,7 @@ function updateTaskRow(item, task, active, now) {
   time.dataset.time = task.id;
   time.textContent = formatClock(taskDuration(state, task.id, now));
   item.querySelector(".icon-btn").setAttribute("aria-label", `Edit ${task.title}`);
+  paintRowConfirm(item);
 }
 
 function animateReorder(nodes, before) {
@@ -695,46 +719,60 @@ function render() {
   paintLive(now);
 }
 
-function confirmNodes() {
+function floatAsks() {
   const nodes = [];
-  if (!floatMode && actionConfirm) nodes.push(actionConfirm);
   if (floatMode) {
-    const local = floatRoot.querySelector("[data-confirm]");
+    const local = floatRoot.querySelector("[data-ask]");
     if (local) nodes.push(local);
   }
-  const pip = floatSink?.querySelector("[data-confirm]");
+  const pip = floatSink?.querySelector("[data-ask]");
   if (pip) nodes.push(pip);
   return nodes;
 }
 
+function paintRowConfirm(row) {
+  const box = row.querySelector(".task-confirm");
+  const on = pending?.taskId === row.dataset.id;
+  row.classList.toggle("is-pending", on);
+  if (!box) return;
+  if (!on) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  const copy = box.querySelector("[data-confirm-copy]");
+  const ok = box.querySelector("[data-confirm-ok]");
+  if (copy) copy.textContent = pending.copy;
+  if (ok) ok.textContent = pending.ok;
+}
+
 function showConfirm() {
   if (!pending) return;
-  for (const node of confirmNodes()) {
-    const copy = node.querySelector("[data-confirm-copy]");
-    const ok = node.querySelector("[data-confirm-ok]");
+  for (const row of taskList.querySelectorAll(".task")) paintRowConfirm(row);
+  const row = taskList.querySelector(`.task[data-id="${CSS.escape(pending.taskId)}"]`);
+  if (!floatMode && row) {
+    row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    row.querySelector("[data-confirm-ok]")?.focus();
+  }
+  for (const ask of floatAsks()) {
+    ask.hidden = false;
+    const copy = ask.querySelector("[data-ask-copy]");
+    const ok = ask.querySelector("[data-confirm-ok]");
     if (copy) copy.textContent = pending.copy;
     if (ok) ok.textContent = pending.ok;
-    node.hidden = false;
   }
-  document.body.classList.toggle("confirming", !floatMode);
-  for (const row of taskList.querySelectorAll(".task")) {
-    row.classList.toggle("is-pending", row.dataset.id === pending.taskId);
-  }
+  if (floatMode) floatRoot.querySelector("[data-ask] [data-confirm-ok]")?.focus();
 }
 
 function closeConfirm() {
   pending = null;
-  for (const node of confirmNodes()) node.hidden = true;
-  document.body.classList.remove("confirming");
-  for (const row of taskList.querySelectorAll(".is-pending")) row.classList.remove("is-pending");
+  for (const row of taskList.querySelectorAll(".task")) paintRowConfirm(row);
+  for (const ask of floatAsks()) ask.hidden = true;
 }
 
 function openConfirm(action) {
   pending = action;
   showConfirm();
-  const owner = document.activeElement?.ownerDocument || document;
-  const local = confirmNodes().find((node) => node.ownerDocument === owner);
-  local?.querySelector("[data-confirm-ok]")?.focus();
 }
 
 function requestStart(taskId) {
@@ -1001,11 +1039,9 @@ document.addEventListener("keydown", (event) => {
 });
 document.addEventListener("pointerdown", (event) => {
   if (!pending) return;
-  if (event.target.closest(".action-confirm, .float-confirm, .task-main, [data-task], #run-btn, [data-toggle]")) return;
+  if (event.target.closest(".task.is-pending, .task-main, [data-task], #run-btn, [data-toggle], .float-ask")) return;
   closeConfirm();
 });
-actionConfirm?.querySelector("[data-confirm-ok]")?.addEventListener("click", () => commitPending());
-actionConfirm?.querySelector("[data-confirm-cancel]")?.addEventListener("click", () => closeConfirm());
 
 menu.addEventListener("click", async (event) => {
   const action = event.target.closest("[data-action]")?.dataset.action;

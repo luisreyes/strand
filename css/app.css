@@ -64,8 +64,8 @@
   --muted: #a39b90;
   --line: rgba(246, 241, 231, 0.12);
   --focus: #f6f1e7;
-  --wash: rgba(240, 162, 2, 0.08);
-  --glow: 0.55;
+  --active: transparent;
+  --corner: 50%;
   --track: #2a251f;
   --raised: #221e1a;
   --dialog: #1c1916;
@@ -94,8 +94,7 @@
   --muted: #6d645b;
   --line: rgba(28, 24, 20, 0.12);
   --focus: #1c1814;
-  --wash: rgba(224, 122, 61, 0.14);
-  --glow: 0.42;
+  --corner: 34%;
   --track: #e3d8c8;
   --raised: #fffdf8;
   --dialog: #fffdf8;
@@ -111,17 +110,33 @@
   --shadow: 0 16px 40px rgba(70, 48, 24, 0.12);
 }
 
+@property --active {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
 * { box-sizing: border-box; }
 
 [hidden] { display: none !important; }
 
 html, body { min-height: 100%; }
 
+html {
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    clamp(240px, 46vw, 760px) clamp(180px, 42vh, 480px) at 0 0,
+    color-mix(in srgb, var(--active) var(--corner), transparent),
+    transparent 70%
+  );
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  transition: --active 420ms ease;
+}
+
 body {
   margin: 0;
-  background:
-    radial-gradient(900px 380px at 0% -10%, var(--wash), transparent 55%),
-    var(--bg);
+  background: transparent;
   color: var(--ink);
   font-family: var(--sans);
   font-size: 16px;
@@ -270,21 +285,7 @@ button { cursor: pointer; }
 }
 
 .hero {
-  position: relative;
   margin-top: 8px;
-}
-
-.hero::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  left: -20px;
-  top: -20px;
-  width: min(420px, 80vw);
-  height: 220px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--active, transparent) 55%, transparent), transparent 68%);
-  opacity: var(--glow);
-  pointer-events: none;
 }
 
 .clock {
@@ -868,12 +869,18 @@ dialog::backdrop { background: var(--backdrop); }
   padding: 16px 16px 12px;
   flex-direction: column;
   gap: 8px;
-  background: var(--bg);
+  background: transparent;
 }
 
 body.float-mode {
   padding: 0;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    clamp(200px, 70vw, 480px) clamp(120px, 48vh, 240px) at 0 0,
+    color-mix(in srgb, var(--active) var(--corner), transparent),
+    transparent 70%
+  );
+  background-repeat: no-repeat;
 }
 
 body.float-mode .shell { display: none; }

@@ -655,6 +655,7 @@ function paintFloat(root, now) {
     dot.style.setProperty("--dot", active.color);
     dot.style.background = active.color;
   }
+  root.ownerDocument.documentElement.style.setProperty("--active", active ? active.color : "transparent");
   paintTrack(root.querySelector("[data-track]"), timelineSegments(state, today, now));
   paintDots(root.querySelector("[data-dots]"), tasksForList(state), active?.id || "");
   const label = runLabel();
@@ -674,7 +675,7 @@ function paintLive(now) {
   clock.textContent = active ? formatClock(taskDuration(state, active.id, now)) : formatClock(todayMs);
   activeName.textContent = active ? active.title : (state.tasks.length ? "Paused" : "Nothing running");
   activeName.style.color = active && readable(active.color) ? active.color : "";
-  hero.style.setProperty("--active", active ? active.color : "transparent");
+  document.documentElement.style.setProperty("--active", active ? active.color : "transparent");
   liveDot.hidden = !active;
   if (active) {
     liveDot.style.setProperty("--dot", active.color);

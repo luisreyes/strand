@@ -3,8 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#100e0c">
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("strand.theme");
+        var theme = stored === "light" || stored === "dark"
+          ? stored
+          : (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.dataset.theme = theme;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", theme === "light" ? "#f4efe6" : "#100e0c");
+      } catch (e) {}
+    })();
+  </script>
   <meta name="description" content="Strand is a private, on-device time tracker. Your day becomes a colored timeline.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -26,6 +39,15 @@
         <h1>Strand</h1>
       </div>
       <div class="top-actions">
+        <button id="theme-btn" class="top-btn theme-btn" type="button" aria-pressed="false" aria-label="Switch to light theme">
+          <svg data-icon="sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.7"></circle>
+            <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+          </svg>
+          <svg data-icon="moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M16 3.2A8.5 8.5 0 1 0 20.8 14 6.5 6.5 0 0 1 16 3.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"></path>
+          </svg>
+        </button>
         <button id="float-btn" class="top-btn" type="button">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <rect x="3" y="4" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"></rect>

@@ -1,4 +1,4 @@
-const CACHE = "strand-v1";
+const CACHE = "strand-v2";
 const SHELL = [
   "./",
   "./index.html",

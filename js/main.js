@@ -30,6 +30,7 @@ import {
 } from "./model.js";
 
 const STORAGE_KEY = "strand.v1";
+const THEME_KEY = "strand.theme";
 const MAX_HOURS = 10000;
 
 const floatMode = new URLSearchParams(location.search).get("view") === "float";
@@ -57,6 +58,7 @@ const taskCount = $("task-count");
 const taskEmpty = $("task-empty");
 const menu = $("menu");
 const menuBtn = $("menu-btn");
+const themeBtn = $("theme-btn");
 const floatBtn = $("float-btn");
 const installBtn = $("install-btn");
 const iosHint = $("ios-hint");
@@ -150,7 +152,29 @@ function readable(hex) {
   const blue = Number.parseInt(value.slice(5, 7), 16) / 255;
   const lin = (channel) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
   const luminance = 0.2126 * lin(red) + 0.7152 * lin(green) + 0.0722 * lin(blue);
-  return luminance > 0.22;
+  const light = document.documentElement.dataset.theme === "light";
+  return light ? luminance < 0.42 : luminance > 0.22;
+}
+
+function applyTheme(theme, { persist = false, paint = false } = {}) {
+  if (theme !== "light" && theme !== "dark") return;
+  document.documentElement.dataset.theme = theme;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", theme === "light" ? "#f4efe6" : "#100e0c");
+  const apple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (apple) apple.content = theme === "light" ? "default" : "black-translucent";
+  if (themeBtn) {
+    const light = theme === "light";
+    themeBtn.setAttribute("aria-pressed", String(light));
+    themeBtn.setAttribute("aria-label", light ? "Switch to dark theme" : "Switch to light theme");
+  }
+  const pip = window.documentPictureInPicture?.window;
+  if (pip) pip.document.documentElement.dataset.theme = theme;
+  if (persist) {
+    try { localStorage.setItem(THEME_KEY, theme); } catch { /* storage may be blocked */ }
+    channel?.postMessage({ type: "theme", theme });
+  }
+  if (paint) paintLive(Date.now());
 }
 
 function viewedDay(now) {
@@ -722,9 +746,9 @@ async function openFloat() {
       }).join("\n");
       pip.document.head.appendChild(style);
       pip.document.documentElement.lang = "en";
+      pip.document.documentElement.dataset.theme = document.documentElement.dataset.theme || "dark";
       pip.document.body.classList.add("float-mode");
       pip.document.body.style.margin = "0";
-      pip.document.body.style.background = "#100e0c";
       const clone = floatRoot.cloneNode(true);
       clone.dataset.ready = "";
       const clonedTrack = clone.querySelector("[data-track]");
@@ -950,10 +974,24 @@ if (ios && !standalone) iosHint.hidden = false;
 
 channel?.addEventListener("message", (event) => {
   if (event.data?.type === "state") applyRemote(event.data.state);
+  if (event.data?.type === "theme") applyTheme(event.data.theme, { paint: true });
 });
 window.addEventListener("storage", (event) => {
   if (event.key === STORAGE_KEY && event.newValue) applyRemote(event.newValue);
+  if (event.key === THEME_KEY) applyTheme(event.newValue, { paint: true });
 });
+
+themeBtn?.addEventListener("click", () => {
+  const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+  applyTheme(next, { persist: true, paint: true });
+});
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", (event) => {
+  let stored = null;
+  try { stored = localStorage.getItem(THEME_KEY); } catch { /* ignore */ }
+  if (stored === "light" || stored === "dark") return;
+  applyTheme(event.matches ? "light" : "dark", { paint: true });
+});
+applyTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
 
 if (floatMode) document.body.classList.add("float-mode");
 buildComposerSwatches();

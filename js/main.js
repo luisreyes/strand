@@ -839,11 +839,13 @@ function runLabel() {
 }
 
 function toggleRun() {
-  if (activeTask(state)) requestStop();
-  else {
-    const task = lastTask(state);
-    if (task) requestStart(task.id);
+  closeConfirm();
+  if (activeTask(state)) {
+    commitStop();
+    return;
   }
+  const task = lastTask(state);
+  if (task) commitStart(task.id);
 }
 
 function openEditor(taskId) {

@@ -437,7 +437,7 @@ function paintTrack(container, items) {
       button.type = "button";
       button.className = "seg";
       button.dataset.id = item.id;
-      button.style.background = item.color;
+      button.style.backgroundColor = item.color;
       button.setAttribute("role", "listitem");
       return button;
     });
@@ -449,7 +449,7 @@ function paintTrack(container, items) {
     if (!button) return;
     const seconds = item.durationMs / 1000;
     button.style.flexGrow = String(item.running ? Math.max(seconds, 0.35) : Math.max(seconds, 0));
-    button.style.background = item.color;
+    button.style.backgroundColor = item.color;
     button.classList.toggle("running", item.running);
     button.dataset.title = item.title;
     button.dataset.length = formatWords(item.durationMs);
@@ -466,11 +466,7 @@ function paintTrack(container, items) {
   });
   const scroll = container.parentElement;
   scroll?.classList.toggle("has-segs", items.length > 0);
-  const live = items.find((item) => item.running);
-  if (scroll) {
-    if (live) scroll.style.setProperty("--live", live.color);
-    else scroll.style.removeProperty("--live");
-  }
+
   const tip = container.closest(".float-root")?.querySelector("[data-tip]")
     || (container === track ? tooltip : null);
   if (tip && !tip.hidden && tip.dataset.for) {

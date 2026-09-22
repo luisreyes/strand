@@ -514,9 +514,9 @@ function createTaskRow(task) {
 
   const side = document.createElement("div");
   side.className = "task-side";
-  const time = document.createElement("span");
-  time.className = "task-time";
-  time.dataset.time = task.id;
+  const times = document.createElement("div");
+  times.className = "task-times";
+  times.append(createTimeFigure("total", "Total"), createTimeFigure("today", "Today"));
   const edit = document.createElement("button");
   edit.type = "button";
   edit.className = "icon-btn";
@@ -525,7 +525,7 @@ function createTaskRow(task) {
     closeConfirm();
     openEditor(item.dataset.id);
   });
-  side.append(time, edit);
+  side.append(times, edit);
   const body = document.createElement("div");
   body.className = "task-body";
   body.append(main, side);
@@ -546,6 +546,27 @@ function createTaskRow(task) {
 
   item.append(body, confirm);
   return item;
+}
+
+function createTimeFigure(kind, label) {
+  const figure = document.createElement("span");
+  figure.className = "task-figure";
+  figure.dataset.kind = kind;
+  const name = document.createElement("span");
+  name.className = "task-figure-label";
+  name.textContent = label;
+  const value = document.createElement("span");
+  value.className = "task-figure-value";
+  figure.append(name, value);
+  return figure;
+}
+
+function paintTaskFigures(item, taskId, now) {
+  const total = item.querySelector('[data-kind="total"] .task-figure-value');
+  const today = item.querySelector('[data-kind="today"] .task-figure-value');
+  if (!total || !today) return;
+  total.textContent = formatClock(taskDuration(state, taskId, now));
+  today.textContent = formatClock(taskTimeOnDay(state, taskId, startOfDay(now), now));
 }
 
 function updateTaskRow(item, task, active, now) {
@@ -578,9 +599,7 @@ function updateTaskRow(item, task, active, now) {
     description.remove();
   }
   main.setAttribute("aria-label", active?.id === task.id ? `Stop ${task.title}` : `Start ${task.title}`);
-  const time = item.querySelector("[data-time]");
-  time.dataset.time = task.id;
-  time.textContent = formatClock(taskDuration(state, task.id, now));
+  paintTaskFigures(item, task.id, now);
   item.querySelector(".icon-btn").setAttribute("aria-label", `Edit ${task.title}`);
   paintRowConfirm(item);
 }
@@ -612,6 +631,7 @@ function animateReorder(nodes, before) {
 }
 
 function renderTasks(now) {
+  taskList.dataset.clock = clockMode;
   const tasks = tasksForList(state);
   const active = activeTask(state);
   taskCount.textContent = tasks.length ? String(tasks.length) : "";
@@ -784,8 +804,9 @@ function paintLive(now) {
     paintDayTasks(items);
   }
 
-  for (const el of taskList.querySelectorAll("[data-time]")) {
-    el.textContent = formatClock(taskDuration(state, el.dataset.time, now));
+  taskList.dataset.clock = clockMode;
+  for (const row of taskList.querySelectorAll(".task")) {
+    paintTaskFigures(row, row.dataset.id, now);
   }
 
   if (!floatMode) {

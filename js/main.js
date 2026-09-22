@@ -49,6 +49,7 @@ const dayLabel = $("day-label");
 const track = $("track");
 const trackEmpty = $("track-empty");
 const viewedTotal = $("viewed-total");
+const dayTasks = $("day-tasks");
 const titleInput = $("title-input");
 const swatches = $("swatches");
 const customColor = $("custom-color");
@@ -665,6 +666,50 @@ function paintFloat(root, now) {
   doc.title = active ? `${clockEl.textContent} · ${active.title}` : "Strand";
 }
 
+function paintDayTasks(items) {
+  const totals = [];
+  const index = new Map();
+  for (const item of items) {
+    if (item.durationMs <= 0) continue;
+    const found = index.get(item.taskId);
+    if (found) {
+      found.durationMs += item.durationMs;
+      continue;
+    }
+    const row = {
+      taskId: item.taskId,
+      title: item.title,
+      color: item.color,
+      durationMs: item.durationMs,
+    };
+    index.set(item.taskId, row);
+    totals.push(row);
+  }
+  const signature = totals.map((row) => `${row.taskId}:${row.color}:${row.durationMs}:${row.title}`).join("|");
+  if (dayTasks.dataset.sig === signature) {
+    dayTasks.hidden = totals.length === 0;
+    return;
+  }
+  dayTasks.dataset.sig = signature;
+  dayTasks.replaceChildren();
+  dayTasks.hidden = totals.length === 0;
+  for (const row of totals) {
+    const item = document.createElement("li");
+    item.className = "day-task";
+    const dot = document.createElement("span");
+    dot.className = "day-task-dot";
+    dot.style.setProperty("--c", row.color);
+    dot.style.background = row.color;
+    const name = document.createElement("span");
+    name.textContent = row.title;
+    const time = document.createElement("time");
+    time.dateTime = `PT${Math.round(row.durationMs / 1000)}S`;
+    time.textContent = formatClock(row.durationMs);
+    item.append(dot, name, time);
+    dayTasks.appendChild(item);
+  }
+}
+
 function paintLive(now) {
   const active = activeTask(state);
   const today = startOfDay(now);
@@ -697,10 +742,12 @@ function paintLive(now) {
 
   if (viewing === today) {
     viewedTotal.hidden = true;
+    paintDayTasks([]);
   } else {
     const dayMs = items.reduce((sum, item) => sum + item.durationMs, 0);
     viewedTotal.hidden = false;
     viewedTotal.textContent = `${formatClock(dayMs)} on this day`;
+    paintDayTasks(items);
   }
 
   for (const el of taskList.querySelectorAll("[data-time]")) {

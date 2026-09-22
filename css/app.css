@@ -370,6 +370,39 @@ button { cursor: pointer; }
   font-size: 0.82rem;
 }
 
+.day-tasks {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.day-task {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.day-task-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.day-task time {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 .track-scroll {
   position: relative;
   min-height: 56px;
@@ -624,6 +657,7 @@ input[type="color"]::-moz-color-swatch {
   border-radius: 16px;
   padding: 12px 10px 12px 14px;
   min-width: 0;
+  overflow: hidden;
   transition: transform 440ms cubic-bezier(.22, .9, .3, 1), background-color 220ms ease, border-color 220ms ease;
 }
 
@@ -631,10 +665,9 @@ input[type="color"]::-moz-color-swatch {
   content: "";
   position: absolute;
   left: 0;
-  top: 12px;
-  bottom: 12px;
-  width: 3px;
-  border-radius: 99px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
   background: var(--c);
 }
 

@@ -618,7 +618,6 @@ input[type="color"]::-moz-color-swatch {
 .task.is-pending {
   flex-direction: column;
   align-items: stretch;
-  border-color: var(--ink);
 }
 
 .task-body {
@@ -629,40 +628,50 @@ input[type="color"]::-moz-color-swatch {
   min-width: 0;
 }
 
-.task-confirm {
-  display: grid;
+.task-go {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
   width: 100%;
-  padding-top: 8px;
-}
-
-.task-confirm p,
-.float-ask p {
   margin: 0;
-  font-size: 0.92rem;
+  border: 0;
+  border-radius: 12px;
+  background: var(--bg-3);
+  color: var(--ink);
+  font: inherit;
   font-weight: 600;
+  font-size: 0.95rem;
+  padding: 11px 14px;
+  touch-action: manipulation;
 }
 
-.task-confirm .btn-primary,
-.task-confirm .btn-ghost,
-.float-ask .btn-primary,
-.float-ask .btn-ghost {
-  padding: 8px 14px;
+.task-confirm {
+  width: 100%;
+  padding-top: 10px;
 }
+
+.task-confirm .task-go { color: var(--ink); }
+
+.task-go span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-go svg {
+  color: var(--c);
+  flex: none;
+}
+
+.task-go [data-icon="stop"] { display: none; }
+
+.task-go[data-kind="stop"] [data-icon="play"] { display: none; }
+
+.task-go[data-kind="stop"] [data-icon="stop"] { display: block; }
 
 .task.is-pending .task-confirm {
   animation: confirm-reveal 180ms ease;
-}
-
-.float-ask {
-  display: grid;
-  gap: 8px;
-}
-
-.confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 
 @keyframes confirm-reveal {

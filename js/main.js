@@ -522,22 +522,16 @@ function createTaskRow(task) {
   const confirm = document.createElement("div");
   confirm.className = "task-confirm";
   confirm.hidden = true;
-  const copy = document.createElement("p");
+  const go = document.createElement("button");
+  go.type = "button";
+  go.className = "task-go";
+  go.dataset.confirmOk = "";
+  go.innerHTML = `<svg data-icon="play" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"></path></svg><svg data-icon="stop" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"></rect></svg>`;
+  const copy = document.createElement("span");
   copy.dataset.confirmCopy = "";
-  const actions = document.createElement("div");
-  actions.className = "confirm-actions";
-  const cancel = document.createElement("button");
-  cancel.type = "button";
-  cancel.className = "btn-ghost";
-  cancel.textContent = "Cancel";
-  cancel.addEventListener("click", () => closeConfirm());
-  const ok = document.createElement("button");
-  ok.type = "button";
-  ok.className = "btn-primary";
-  ok.dataset.confirmOk = "";
-  ok.addEventListener("click", () => commitPending());
-  actions.append(cancel, ok);
-  confirm.append(copy, actions);
+  go.append(copy);
+  go.addEventListener("click", () => commitPending());
+  confirm.append(go);
 
   item.append(body, confirm);
   return item;
@@ -741,10 +735,10 @@ function paintRowConfirm(row) {
     return;
   }
   box.hidden = false;
+  const go = box.querySelector(".task-go");
+  if (go) go.dataset.kind = pending.kind === "stop" ? "stop" : "play";
   const copy = box.querySelector("[data-confirm-copy]");
-  const ok = box.querySelector("[data-confirm-ok]");
   if (copy) copy.textContent = pending.copy;
-  if (ok) ok.textContent = pending.ok;
 }
 
 function showConfirm() {
@@ -755,12 +749,13 @@ function showConfirm() {
     row.scrollIntoView({ block: "nearest", behavior: "smooth" });
     row.querySelector("[data-confirm-ok]")?.focus();
   }
+  const tone = state.tasks.find((task) => task.id === pending.taskId)?.color;
   for (const ask of floatAsks()) {
     ask.hidden = false;
+    ask.dataset.kind = pending.kind === "stop" ? "stop" : "play";
+    if (tone) ask.style.setProperty("--c", tone);
     const copy = ask.querySelector("[data-ask-copy]");
-    const ok = ask.querySelector("[data-confirm-ok]");
     if (copy) copy.textContent = pending.copy;
-    if (ok) ok.textContent = pending.ok;
   }
   if (floatMode) floatRoot.querySelector("[data-ask] [data-confirm-ok]")?.focus();
 }
@@ -785,8 +780,7 @@ function requestStart(taskId) {
     openConfirm({
       kind: "switch",
       taskId,
-      copy: `Stop ${active.title} and start ${task.title}?`,
-      ok: "Switch",
+      copy: `Switch to ${task.title}`,
     });
     return;
   }
@@ -794,8 +788,7 @@ function requestStart(taskId) {
   openConfirm({
     kind: "start",
     taskId,
-    copy: resumed ? `Resume ${task.title}?` : `Start ${task.title}?`,
-    ok: resumed ? "Resume" : "Start",
+    copy: `${resumed ? "Resume" : "Start"} ${task.title}`,
   });
 }
 
@@ -809,8 +802,7 @@ function requestStop() {
   openConfirm({
     kind: "stop",
     taskId: active.id,
-    copy: `Stop ${active.title}?`,
-    ok: "Stop",
+    copy: `Stop ${active.title}`,
   });
 }
 

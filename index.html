@@ -132,13 +132,11 @@
     </div>
     <div class="float-dots" data-dots aria-label="Switch task"></div>
     <button type="button" class="float-toggle" data-toggle hidden>Pause</button>
-    <div class="float-ask" data-ask hidden>
-      <p data-ask-copy></p>
-      <div class="confirm-actions">
-        <button type="button" class="btn-ghost" data-confirm-cancel>Cancel</button>
-        <button type="button" class="btn-primary" data-confirm-ok>Start</button>
-      </div>
-    </div>
+    <button type="button" class="task-go" data-ask data-confirm-ok hidden>
+      <svg data-icon="play" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"></path></svg>
+      <svg data-icon="stop" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"></rect></svg>
+      <span data-ask-copy></span>
+    </button>
     <div class="tooltip" data-tip hidden role="tooltip">
       <p class="tip-title"><span class="tip-swatch"></span><span class="tip-title-text"></span></p>
       <p class="tip-length"></p>

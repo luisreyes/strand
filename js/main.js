@@ -455,7 +455,13 @@ function paintTrack(container, items) {
         : `${item.title}, ${formatWords(item.durationMs)}, task total ${formatWords(item.taskTotalMs)}`,
     );
   });
-  container.parentElement?.classList.toggle("has-segs", items.length > 0);
+  const scroll = container.parentElement;
+  scroll?.classList.toggle("has-segs", items.length > 0);
+  const live = items.find((item) => item.running);
+  if (scroll) {
+    if (live) scroll.style.setProperty("--live", live.color);
+    else scroll.style.removeProperty("--live");
+  }
   const tip = container.closest(".float-root")?.querySelector("[data-tip]")
     || (container === track ? tooltip : null);
   if (tip && !tip.hidden && tip.dataset.for) {

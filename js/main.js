@@ -512,8 +512,6 @@ function createTaskRow(task) {
     else requestStart(id);
   });
 
-  const side = document.createElement("div");
-  side.className = "task-side";
   const times = document.createElement("div");
   times.className = "task-times";
   times.append(createTimeFigure("total", "Total"), createTimeFigure("today", "Today"));
@@ -525,10 +523,12 @@ function createTaskRow(task) {
     closeConfirm();
     openEditor(item.dataset.id);
   });
-  side.append(times, edit);
+  const top = document.createElement("div");
+  top.className = "task-top";
+  top.append(main, edit);
   const body = document.createElement("div");
   body.className = "task-body";
-  body.append(main, side);
+  body.append(top, times);
 
   const confirm = document.createElement("div");
   confirm.className = "task-confirm";

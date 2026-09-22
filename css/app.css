@@ -905,13 +905,27 @@ dialog::backdrop { background: var(--backdrop); }
 .editor h3,
 #confirm h3 { margin: 0 0 14px; font-size: 1.2rem; }
 
+.editor form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.editor h3 { margin: 0; }
+
 .editor label,
 .time-fields label {
   display: grid;
   gap: 6px;
-  margin-bottom: 12px;
+  margin: 0;
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+.editor .swatches {
+  gap: 14px 12px;
+  padding: 4px 2px;
+  margin: 0;
 }
 
 .editor textarea {
@@ -924,7 +938,7 @@ dialog::backdrop { background: var(--backdrop); }
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   border: 0;
-  margin: 0 0 8px;
+  margin: 0;
   padding: 0;
 }
 
@@ -935,7 +949,7 @@ dialog::backdrop { background: var(--backdrop); }
   padding: 10px 8px;
 }
 
-.hint { margin: 0 0 14px; font-size: 0.82rem; }
+.hint { margin: 0; font-size: 0.82rem; }
 
 .dialog-actions {
   display: flex;

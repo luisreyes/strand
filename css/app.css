@@ -413,16 +413,16 @@ button { cursor: pointer; }
   content: "";
   position: absolute;
   z-index: 0;
-  right: -14px;
+  right: -8px;
   top: 50%;
-  width: 72px;
-  height: 150%;
+  width: 48px;
+  height: 120%;
   transform: translateY(-50%);
   border-radius: 999px;
   background: var(--live, transparent);
-  filter: blur(18px);
+  filter: blur(14px);
   pointer-events: none;
-  animation: seg-glow 1.6s ease-in-out infinite;
+  animation: seg-glow 2.8s ease-in-out infinite;
 }
 
 .track {
@@ -471,17 +471,17 @@ button { cursor: pointer; }
 .seg.running {
   position: relative;
   z-index: 1;
-  animation: seg-live 1.6s ease-in-out infinite;
+  animation: seg-live 2.8s ease-in-out infinite;
 }
 
 @keyframes seg-live {
   0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.22); }
+  50% { filter: brightness(1.06); }
 }
 
 @keyframes seg-glow {
-  0%, 100% { opacity: 0.38; transform: translateY(-50%) scale(0.94); }
-  50% { opacity: 0.9; transform: translateY(-50%) scale(1.12); }
+  0%, 100% { opacity: 0.18; transform: translateY(-50%) scale(0.98); }
+  50% { opacity: 0.38; transform: translateY(-50%) scale(1.03); }
 }
 
 .tooltip {

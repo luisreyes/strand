@@ -21,6 +21,7 @@ import {
   splitDuration,
   startOfDay,
   taskDuration,
+  taskTimeOnDay,
   tasksForList,
   timelineSegments,
   toCsv,
@@ -31,6 +32,7 @@ import {
 
 const STORAGE_KEY = "strand.v1";
 const THEME_KEY = "strand.theme";
+const CLOCK_KEY = "strand.clock";
 const MAX_HOURS = 10000;
 
 const floatMode = new URLSearchParams(location.search).get("view") === "float";
@@ -89,6 +91,12 @@ let selectedColor = PALETTE[0];
 let pinnedDay = null;
 let justAddedId = null;
 let pending = null;
+let clockMode = "total";
+try {
+  if (localStorage.getItem(CLOCK_KEY) === "today") clockMode = "today";
+} catch {
+  clockMode = "total";
+}
 let editorState = null;
 let toastTimer = 0;
 let deferredPrompt = null;
@@ -638,6 +646,32 @@ function renderTasks(now) {
   if (orderChanged && !reduce) animateReorder(nodes, before);
 }
 
+function clockFigures(now) {
+  const active = activeTask(state);
+  const today = startOfDay(now);
+  if (active) {
+    return {
+      total: taskDuration(state, active.id, now),
+      today: taskTimeOnDay(state, active.id, today, now),
+    };
+  }
+  const total = state.tasks.reduce((sum, task) => sum + taskDuration(state, task.id, now), 0);
+  return { total, today: dayTotal(state, today, now) };
+}
+
+function shownClockMs(figures) {
+  return clockMode === "today" ? figures.today : figures.total;
+}
+
+function setClockMode(mode, { persist = false, paint = true } = {}) {
+  clockMode = mode === "today" ? "today" : "total";
+  if (persist) {
+    try { localStorage.setItem(CLOCK_KEY, clockMode); } catch { /* storage may be blocked */ }
+    channel?.postMessage({ type: "clock", mode: clockMode });
+  }
+  if (paint) paintLive(Date.now());
+}
+
 function paintFloat(root, now) {
   if (!root) return;
   const active = activeTask(state);
@@ -646,9 +680,8 @@ function paintFloat(root, now) {
   const nameEl = root.querySelector("[data-name]");
   const dot = root.querySelector("[data-dot]");
   const toggle = root.querySelector("[data-toggle]");
-  clockEl.textContent = active
-    ? formatClock(taskDuration(state, active.id, now))
-    : formatClock(dayTotal(state, today, now));
+  clockEl.textContent = formatClock(shownClockMs(clockFigures(now)));
+  clockEl.setAttribute("aria-label", clockMode === "today" ? "Today. Show total instead" : "Total. Show today instead");
   nameEl.textContent = active ? active.title : (state.tasks.length ? "Paused" : "Nothing running");
   nameEl.style.color = active && readable(active.color) ? active.color : "";
   dot.hidden = !active;
@@ -713,11 +746,16 @@ function paintDayTasks(items) {
 function paintLive(now) {
   const active = activeTask(state);
   const today = startOfDay(now);
-  const todayMs = dayTotal(state, today, now);
   const viewing = viewedDay(now);
   const items = timelineSegments(state, viewing, now);
 
-  clock.textContent = active ? formatClock(taskDuration(state, active.id, now)) : formatClock(todayMs);
+  const figures = clockFigures(now);
+  const shown = shownClockMs(figures);
+  const other = clockMode === "today" ? figures.total : figures.today;
+  const otherLabel = clockMode === "today" ? "Total" : "Today";
+  clock.textContent = formatClock(shown);
+  clock.setAttribute("aria-label", clockMode === "today" ? "Today. Show total instead" : "Total. Show today instead");
+  $("clock-mode").textContent = clockMode === "today" ? "Today" : "Total";
   activeName.textContent = active ? active.title : (state.tasks.length ? "Paused" : "Nothing running");
   activeName.style.color = active && readable(active.color) ? active.color : "";
   document.documentElement.style.setProperty("--active", active ? active.color : "transparent");
@@ -726,9 +764,9 @@ function paintLive(now) {
     liveDot.style.setProperty("--dot", active.color);
     liveDot.style.background = active.color;
   }
-  todayLine.textContent = active
-    ? `Today ${formatClock(todayMs)}`
-    : (state.tasks.length ? "Select a task to continue" : "Add a task, then select it to start");
+  todayLine.textContent = state.tasks.length
+    ? `${otherLabel} ${formatClock(other)}`
+    : "Add a task, then select it to start";
 
   runBtn.hidden = !runLabel();
   runBtn.textContent = runLabel();
@@ -966,6 +1004,9 @@ function setupFloatSurface(root) {
   const trackEl = root.querySelector("[data-track]");
   if (trackEl) trackEl.dataset.bound = "";
   bindTrack(trackEl, root.querySelector("[data-tip]"));
+  root.querySelector("[data-clock]")?.addEventListener("click", () => {
+    setClockMode(clockMode === "today" ? "total" : "today", { persist: true });
+  });
   root.querySelector("[data-toggle]")?.addEventListener("click", () => toggleRun());
   root.querySelector("[data-dots]")?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-task]");
@@ -1054,6 +1095,9 @@ composer.addEventListener("submit", (event) => {
   toast(`Added ${added.title}. Select it to start.`);
 });
 
+clock.addEventListener("click", () => {
+  setClockMode(clockMode === "today" ? "total" : "today", { persist: true });
+});
 runBtn.addEventListener("click", () => toggleRun());
 dayPrev.addEventListener("click", () => {
   pinnedDay = previousDay(viewedDay(Date.now()));
@@ -1239,10 +1283,12 @@ if (ios && !standalone) iosHint.hidden = false;
 channel?.addEventListener("message", (event) => {
   if (event.data?.type === "state") applyRemote(event.data.state);
   if (event.data?.type === "theme") applyTheme(event.data.theme, { paint: true });
+  if (event.data?.type === "clock") setClockMode(event.data.mode);
 });
 window.addEventListener("storage", (event) => {
   if (event.key === STORAGE_KEY && event.newValue) applyRemote(event.newValue);
   if (event.key === THEME_KEY) applyTheme(event.newValue, { paint: true });
+  if (event.key === CLOCK_KEY) setClockMode(event.newValue);
 });
 
 themeBtn?.addEventListener("click", () => {

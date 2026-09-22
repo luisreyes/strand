@@ -289,13 +289,31 @@ button { cursor: pointer; }
 }
 
 .clock {
-  margin: 12px 0 8px;
+  display: block;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   font-family: var(--mono);
   font-weight: 500;
   font-size: clamp(3.3rem, 16vw, 5.4rem);
   line-height: 0.9;
   letter-spacing: -0.06em;
   font-variant-numeric: tabular-nums;
+}
+
+.clock:hover { opacity: 0.8; }
+
+.clock-mode {
+  margin: 6px 0 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .active-row {
@@ -960,7 +978,14 @@ body.float-mode .shell { display: none; }
 body.float-mode .float-root { display: flex; }
 
 .float-clock {
+  display: block;
   margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   font-family: var(--mono);
   font-weight: 500;
   font-size: clamp(2.4rem, 12vw, 3.2rem);

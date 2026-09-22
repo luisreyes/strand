@@ -71,7 +71,8 @@
     <div class="layout">
       <div class="work">
         <section class="hero" id="hero" aria-labelledby="active-name">
-          <p class="clock" id="clock">0:00:00</p>
+          <button type="button" class="clock" id="clock" aria-label="Total time. Show today instead">0:00:00</button>
+          <p class="clock-mode" id="clock-mode">Total</p>
           <div class="active-row">
             <span class="live-dot" id="live-dot" hidden></span>
             <p class="active-name" id="active-name">Nothing running</p>
@@ -123,7 +124,7 @@
   </div>
 
   <div id="float-root" class="float-root">
-    <p class="float-clock" data-clock>0:00:00</p>
+    <button type="button" class="float-clock" data-clock>0:00:00</button>
     <div class="float-name-row">
       <span class="live-dot" data-dot hidden></span>
       <p class="float-name" data-name>Paused</p>
